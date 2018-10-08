@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>花瓣美图</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="https://cdn.bootcss.com/masonry/4.2.1/masonry.pkgd.min.js"></script>
+	<style>
+		::-webkit-scrollbar{ display: none; }
+		*{ margin:0; padding:0; }
+		html,body,#view{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
+		#view{ width:85%;height:100%; margin:auto; }
+		#tool{ position: absolute; top: 0; right: 0px; padding: 10px; }
+		img.pin{ width: 32%; max-height: 100%; margin: 0.6665% }
+	</style>
+</head>
+<body>
+	<div id="view"></div>
+	<div id="tool">
+		<button id="prev">上一页</button>
+		<input id="keyword" placeholder="美女"/>
+		<button id="next">下一页</button>
+	</div>
+</body>
+<script type="text/javascript">
+	// 新窗口打开链接  (不携带Referer头)
+	function open_without_referrer(link){
+		document.body.appendChild(document.createElement('iframe')).src='javascript:"<script>top.location.replace(\''+link+'\')<\/script>"';
+	}
+	// 新窗口打开链接  (不携带Referer头)
+	function open_new_window(full_link){ 
+ 		window.open('javascript:window.name;', '<script>location.replace("'+full_link+'")<\/script>');
+ 	}
+	// 代理ajax
+	function proxyAjax(option,callback) { 
+		$.ajax({
+			url:"http://127.0.0.1:8000/api/xhr",
+			type:'POST',
+			data:JSON.stringify(option),
+			dataType:"json",
+			success:function(result,textStatus,jqXHR){
+				if(result.status){
+					typeof callback=="function" ? callback(result.data) : null;
+				}else{
+					console.error("接口访问失败",result.msg);
+				}
+			},
+			error:function(res,textStatus){
+				console.error("Ajax代理服务器访问失败");
+			}
+		});
+	}
+
+	// 程序入口
+	$(document).ready(function(){
+		// 初始配置
+		var $view = $("#view"), keyword = "动漫", page = 1,size = 100;
+		$view.on("click",".pin",function(){
+			open_new_window($(this).attr("src").replace("_fw236",""));
+		});
+		$("#prev").on("click",function () {
+			if (page<=1) return;
+			page -= 1;
+			getImageByKeyword(keyword, page, size);
+		});
+		$("#next").on("click",function () {
+			page += 1;
+			getImageByKeyword(keyword, page, size);
+		});
+		$("#keyword").on("change",function () {
+			keyword = $(this).val()||"";
+			getImageByKeyword(keyword, page, size);
+		});
+		// 正确结果处理
+		function resultCallback(re){
+			$view.html(null);
+			$(re).find("body").prevObject.map(function(i,e){
+				return e.nodeName=="SCRIPT"&&!e.src&&e.innerText.indexOf('app.page["pins"]')>=0?e:null;
+			}).each(function(i,e){
+				var pinsList = $(e).text().match(/"key"\s*:\s*"[^"]*"/gm).join(",").replace(/("key":|")/gm,"").split(",");
+				pinsList.forEach(function(e,i){
+					var $img = $("<img></img>").addClass("pin").attr("src",["http://img.hb.aicdn.com/",e,"_fw236"].join("")).attr("data-src","http://img.hb.aicdn.com/"+e).appendTo($view);
+				});
+			});
+		}
+		// 根据关键字分页获取图片
+		function getImageByKeyword(keyword,page,size){
+			console.log(keyword,page,size);
+			var proxyOption = {
+				url:"https://huaban.com/search/?q="+encodeURI(keyword)+"&page="+page+"&per_page="+size,
+				method:"GET"
+			};
+			proxyAjax(proxyOption,resultCallback);
+		};
+		// 初始加载
+		getImageByKeyword(keyword, page, size);
+	});
+</script>
+</html>

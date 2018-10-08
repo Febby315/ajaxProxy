@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>网易云音乐</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<style>
+		::-webkit-scrollbar{ display: none; }
+		*{ margin:0; padding:0; }
+		html,body,#view{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
+		#view{ width:85%;height:100%; margin:auto; }
+		#tool{ position: absolute; top: 0; right: 0px; padding: 10px; }
+		img.pin{ width: 32%; max-height: 100%; margin: 0.6665% }
+	</style>
+</head>
+
+<body>
+	<div id="view">
+		<pre><code id="json"></code></pre>
+	</div>
+</body>
+<script type="text/javascript">
+	// 代理ajax
+	function proxyAjax(option,callback) { 
+		$.ajax({
+			url:"http://127.0.0.1:8000/api/xhr",
+			type:'POST',
+			data:JSON.stringify(option),
+			dataType:"json",
+			success:function(result,textStatus,jqXHR){
+				if(result.status){
+					typeof callback=="function" ? callback(result.data) : null;
+				}else{
+					console.error("接口访问失败",result.msg);
+				}
+			}
+		});
+	}
+	$("body").ready(function () {
+		var option = {
+			url: "http://music.163.com/eapi/v3/playlist/detail",
+			method: "POST",
+            header:{
+                "Cookie":"os=pc; deviceId=5D1C7B359D48039E8F049F9BE397D288B6D4FA4C4CCC6AF77527; osver=Microsoft-Windows-10-Professional-build-14393-64bit; appver=2.1.2.168028; MUSIC_A=c0f8ca171569f82b1b2ae2d5c306ef612ffeea65c37094f8cfb36dca410debed96e99939eda9af362f0b268da485a55478cb668a4965fa0465e09677017bcaa1f3e76a69a5c3aed973f85718b493697ed7954d1dd1b019e36cd849ab965282c5bf122d59fa1ed6a2; MUSIC_U=06e59a554e0299172872885d0e9eadfcd7d092cf3e5545736727483ddf3dff4e567d002a59c9f5f12cd4e93b98972429908ecbd70063c55bcb27fd52f4df7d65d5fd85e30ea100a9bf122d59fa1ed6a2; __csrf=8bc7c80300c156689467e3d535e8d370; __remember_me=true; channel=netease",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body:"params=8DC1BDC42724718D65298B7ED2FDA170E14D621EB896C63E8E0FBC1DFA867E56B3B7368EB3C005C04169E044F918BDCC0D32E148A8742231F653AE0862D12718DB0B5605F659B246AAA13AA217F0B29257E2DBB5C19220C20EE55DE2B6B8E0C0DA6346D00362771113455A98A163207CB40A38525BE56CDBC698F73DFC9392BF2CBA6FFE3AC75B245A49E23786EE61FAA5606864B30222A1B2166FBBEE95763628FD01CB7306C48A952FAF23D4A4BA394B87852178409EB148F133A082969A0776CAD4C7AA71FB6ECC7063668EDF4A7122337F9A7EEEC4DDDD5396BE51D7F72A52B004FC5590195417B0BF67AEDCCA1EB3DC5EDF9F3C366ED84F0678D2C20A33346E434F8DE19A2FF158FC5A285C0B199F0D6A33C6D105682D961908DF7EFC440D258B8E53E9C5A09F685BA41F3F1F82A7BD55ECEBE2153A4FFCDB79A2E4F58BE53BAFE169858631D250D293181F40DD4CA1C427037EB0765AD0A4D92073F2A4BCA8FF53A918CFAB013D561E449C34B23F75973D73028217B2C0A95DD232443A67CB359700617195549AC50A401FD2B146B650D0D77255AB423F32548B433469"
+		};
+		var pins;
+		proxyAjax(option,function (re) {
+            $("#json").text(JSON.stringify(JSON.parse(re),null,"\t"));
+		});
+	});
+</script>
+
+</html>

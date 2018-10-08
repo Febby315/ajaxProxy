@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>迅雷壁纸</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<style>
+		::-webkit-scrollbar{ display: none; }
+		*{ margin:0; padding:0; }
+		html,body,#view{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
+		#view{ width:85%;height:100%; margin:auto; }
+		#tool{ position: absolute; top: 0; right: 0px; padding: 10px; }
+		img.pin{ width: 32%; max-height: 100%; margin: 0.6665% }
+	</style>
+</head>
+
+<body>
+	<div id="view"></div>
+	<div id="tool">
+		<button id="prev">上一页</button>
+		<select id="classify"></select>
+		<button id="next">下一页</button>
+	</div>
+</body>
+<script type="text/javascript">
+	// 代理ajax
+	function proxyAjax(option,callback) { 
+		$.ajax({
+			url:"http://127.0.0.1:8000/api/xhr",
+			type:'POST',
+			data:JSON.stringify(option),
+			dataType:"json",
+			success:function(result,textStatus,jqXHR){
+				if(result.status){
+					typeof callback=="function" ? callback(result.data) : null;
+				}else{
+					console.error("接口访问失败",result.msg);
+				}
+			}
+		});
+	}
+	$("body").ready(function () {
+		// 初始配置
+		var classifyID = 1,page = 1,size = 10;
+		$("#prev").on("click",function () {
+			if (page<=1) return;
+			page -= 1;
+			getClassifyImage(classifyID, page, size);
+		});
+		$("#next").on("click",function () {
+			page += 1;
+			getClassifyImage(classifyID, page, size);
+		});
+		$("#classify").on("change",function () {
+			classifyID = $(this).val()||1;
+			getClassifyImage(classifyID, page, size);
+		});
+		// 分页获取分类图片
+		function getClassifyImage(classify_id,page,size){
+			var offset = (page-1)*size;
+			var option = {
+				url: "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_image&offset="+offset+"&classify_id="+classify_id+"&sub_classify_id=0&number="+size+"&refer=client_1.0.3.72",
+				type: "get"
+			};
+			proxyAjax(option,function (re) {
+				var result = JSON.parse(re), $view = $("#view").html(null);
+				var list = result.data||[];
+				list.forEach(function(item,i){
+					console.log(item.url);
+					$view.append( $("<img>").addClass("pin").attr("src",item.url.replace(".jpg","_417x238.jpg")) );
+				});
+			});
+		}
+		// 获取分类
+		var classifyOption = {
+			url: "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_list&offset=0&number=100&refer=client_1.0.3.72",
+			type: "get"
+		};
+		proxyAjax(classifyOption,function (re) {
+			var result = JSON.parse(re), $classify = $("#classify").html(null);
+			var list = result.data||[];
+			list.forEach(function(item,i){
+				$classify.append( $("<option>").attr("value",item.classify_id).text(item.name) );
+			});
+			getClassifyImage(classifyID, page, size);
+		});
+	});
+</script>
+
+</html>
