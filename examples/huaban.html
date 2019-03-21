@@ -5,50 +5,60 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>花瓣美图</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	<script src="https://cdn.bootcss.com/masonry/4.2.1/masonry.pkgd.min.js"></script>
+	<script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.js"></script>
 	<style>
 		::-webkit-scrollbar{ display: none; }
 		*{ margin:0; padding:0; }
 		html,body,#view{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
 		#view{ width:85%;height:100%; margin:auto; }
-		#tool{ position: absolute; top: 0; right: 0px; padding: 10px; }
-		img.pin{ width: 32%; max-height: 100%; margin: 0.6665% }
+		#tool{ position: absolute; top: 0; right: 0px; padding: 5px; }
+		img.pin{ max-width: 15%; max-height: 30%; margin: 10px }
 	</style>
 </head>
 <body>
 	<div id="view"></div>
 	<div id="tool">
 		<button id="prev">上一页</button>
-		<input id="keyword" placeholder="美女"/>
+		<input id="keyword" placeholder="壁纸"/>
 		<button id="next">下一页</button>
 	</div>
 </body>
 <script type="text/javascript">
-	// 新窗口打开链接  (不携带Referer头)
+	var proxyBaseApi = "http://127.0.0.1:8081";
+	// 新窗口打开链接 (不携带Referer头)
 	function open_without_referrer(link){
 		document.body.appendChild(document.createElement('iframe')).src='javascript:"<script>top.location.replace(\''+link+'\')<\/script>"';
 	}
-	// 新窗口打开链接  (不携带Referer头)
+	// 新窗口打开链接 (不携带Referer头)
 	function open_new_window(full_link){ 
  		window.open('javascript:window.name;', '<script>location.replace("'+full_link+'")<\/script>');
  	}
+	// 花瓣数据解析完成事件
+	window.parseSuccess = parseSuccess = function(app){
+		var $view = $("#view").html(""), pins = app&&app.page ? app.page.pins : [];
+		pins.map(function(e,i){
+			var src = ["http://img.hb.aicdn.com/", e.file.key].join("");
+			var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURI(src+"_fw236")}`).attr("data-src", src).addClass("pin");
+			$img.on("error",function(){$(this).remove()});// 错误图片自我移除
+			$view.append($img);
+			return src;
+		});
+	}
 	// 代理ajax
 	function proxyAjax(option,callback) { 
 		$.ajax({
-			url:"http://127.0.0.1:8000/api/xhr",
+			url:`${proxyBaseApi}/api/post`,
 			type:'POST',
 			data:JSON.stringify(option),
-			dataType:"json",
 			success:function(result,textStatus,jqXHR){
-				if(result.status){
-					typeof callback=="function" ? callback(result.data) : null;
+				if(textStatus==="success"){
+					typeof callback=="function" ? callback(result) : null;
 				}else{
-					console.error("接口访问失败",result.msg);
+					console.error("接口访问失败", result, textStatus, jqXHR);
 				}
 			},
-			error:function(res,textStatus){
-				console.error("Ajax代理服务器访问失败");
+			error:function(result,textStatus,jqXHR){
+				console.log("Ajax代理服务器访问失败", result, textStatus, jqXHR);
 			}
 		});
 	}
@@ -56,41 +66,38 @@
 	// 程序入口
 	$(document).ready(function(){
 		// 初始配置
-		var $view = $("#view"), keyword = "动漫", page = 1,size = 100;
+		var $view = $("#view"), keyword = "美", page = 1,size = 50;
+		// 初始化事件
 		$view.on("click",".pin",function(){
-			open_new_window($(this).attr("src").replace("_fw236",""));
+			open_new_window($(this).data("src").replace("_fw236",""));
 		});
 		$("#prev").on("click",function () {
-			if (page<=1) return;
-			page -= 1;
-			getImageByKeyword(keyword, page, size);
+			page>1 ? getImageByKeyword(keyword, --page, size) : null;
 		});
 		$("#next").on("click",function () {
-			page += 1;
-			getImageByKeyword(keyword, page, size);
+			getImageByKeyword(keyword, ++page, size);
 		});
 		$("#keyword").on("change",function () {
-			keyword = $(this).val()||"";
-			getImageByKeyword(keyword, page, size);
+			getImageByKeyword($(this).val(), page, size);
 		});
 		// 正确结果处理
 		function resultCallback(re){
 			$view.html(null);
-			$(re).find("body").prevObject.map(function(i,e){
+			// 解析接口数据
+			$(re).find("body").prevObject.filter(function(i,e){
 				return e.nodeName=="SCRIPT"&&!e.src&&e.innerText.indexOf('app.page["pins"]')>=0?e:null;
 			}).each(function(i,e){
-				var pinsList = $(e).text().match(/"key"\s*:\s*"[^"]*"/gm).join(",").replace(/("key":|")/gm,"").split(",");
-				pinsList.forEach(function(e,i){
-					var $img = $("<img></img>").addClass("pin").attr("src",["http://img.hb.aicdn.com/",e,"_fw236"].join("")).attr("data-src","http://img.hb.aicdn.com/"+e).appendTo($view);
-				});
+				var $script = $("<script>"+e.innerText.replace("app.route();","window.parseSuccess(app);")+"<\/script>");
+				$("body").append($script);
 			});
 		}
 		// 根据关键字分页获取图片
 		function getImageByKeyword(keyword,page,size){
 			console.log(keyword,page,size);
 			var proxyOption = {
-				url:"https://huaban.com/search/?q="+encodeURI(keyword)+"&page="+page+"&per_page="+size,
-				method:"GET"
+				url: "https://huaban.com/search/?q="+encodeURI(keyword)+"&page="+page+"&per_page="+size+"&type=pins",//&category=beauty
+				method:"GET",
+				header:{ Referer:"http://huaban.com/" }
 			};
 			proxyAjax(proxyOption,resultCallback);
 		};

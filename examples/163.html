@@ -6,35 +6,37 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>网易云音乐</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.js"></script>
+	<link href="https://cdn.staticfile.org/highlight.js/9.15.6/styles/vs.min.css" rel="stylesheet">
+	<script src="https://cdn.staticfile.org/highlight.js/9.15.6/highlight.min.js"></script>
+	<script src="https://cdn.staticfile.org/highlight.js/9.15.6/languages/json.min.js"></script>
+	
 	<style>
 		::-webkit-scrollbar{ display: none; }
 		*{ margin:0; padding:0; }
-		html,body,#view{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
-		#view{ width:85%;height:100%; margin:auto; }
+		html,body,#app{ height:100%; width:100%; background:#333; color:#fff; overflow: auto; }
 		#tool{ position: absolute; top: 0; right: 0px; padding: 10px; }
 		img.pin{ width: 32%; max-height: 100%; margin: 0.6665% }
 	</style>
 </head>
 
 <body>
-	<div id="view">
-		<pre><code id="json"></code></pre>
+	<div id="app">
+		<pre style="padding:0;margin:0;background:#000;"><code id="view" class="json" >加载中...</code></pre>
 	</div>
 </body>
 <script type="text/javascript">
 	// 代理ajax
 	function proxyAjax(option,callback) { 
 		$.ajax({
-			url:"http://127.0.0.1:8000/api/xhr",
+			url:"http://127.0.0.1:8081/api/post",
 			type:'POST',
 			data:JSON.stringify(option),
-			dataType:"json",
 			success:function(result,textStatus,jqXHR){
-				if(result.status){
-					typeof callback=="function" ? callback(result.data) : null;
+				if(textStatus==="success"){
+					typeof callback=="function" ? callback(result) : null;
 				}else{
-					console.error("接口访问失败",result.msg);
+					console.error("接口访问失败",result);
 				}
 			}
 		});
@@ -51,7 +53,9 @@
 		};
 		var pins;
 		proxyAjax(option,function (re) {
-            $("#json").text(JSON.stringify(JSON.parse(re),null,"\t"));
+			$("#view").text(JSON.stringify(JSON.parse(re),null,"    ")).each(function(i,block){
+				hljs.highlightBlock(block);
+			});
 		});
 	});
 </script>

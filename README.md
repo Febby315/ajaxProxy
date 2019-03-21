@@ -4,7 +4,7 @@
 
 ### 引用架包
 
-#### WEB框架 [httprouter](https://github.com/julienschmidt/httprouter)
+#### WEB框架
 
 > go get github.com/julienschmidt/httprouter
 
@@ -15,10 +15,10 @@
 ```ini
 [global]
   # 端口配置
-  port=8000
+  port=8081
 ```
 
-### 1. 跨域接口 POST /api/xhr
+### 1. 跨域接口 POST /api/post
 
 > 接口参数说明
 
@@ -32,6 +32,7 @@ body|字符串|||请求体
     url和mathod为必填项
 
 ```javascript
+// http://127.0.0.1:8081/api/post
 {
   "url":"", //请求地址(必须)
   "mathod":"GET", //请求方式(必须:GET|POST)
@@ -41,6 +42,19 @@ body|字符串|||请求体
   "body":"",  //请求体("可选")
 }
 ```
+
+### 1. 跨域接口 GET /api/get
+
+> 代理请求静态资源(由于部分今天资源也存在跨域或者限制问题)
+
+#### 使用示例
+
+```javascript
+// http://127.0.0.1:8081/api/get?url=encodeURI(url)
+"http://127.0.0.1:8081/api/get?url=http://img.hb.aicdn.com/d84030573bcad38920ba4b2248cd98cde343c52722674-0PEN0M"
+```
+
+    同样可传/api/post接口的所有参数,但是代理请求URL将以querystring参数中url参数为准
 
 ## 使用说明
 

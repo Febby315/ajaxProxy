@@ -6,15 +6,16 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>花瓣图片 瀑布流 免登陆</title>
 	<!-- CDN -->
-	<link href="https://cdn.bootcss.com/normalize/8.0.0/normalize.min.css" rel="stylesheet">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	<script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
-	<script src="https://cdn.bootcss.com/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js"></script>
-	<script src="https://cdn.bootcss.com/masonry/4.2.1/masonry.pkgd.min.js"></script>
-	<script src="https://cdn.bootcss.com/animejs/2.2.0/anime.min.js"></script>
-	<script src="https://cdn.bootcss.com/urljs/2.3.1/url.min.js"></script>
+	<link href="https://cdn.staticfile.org/normalize/8.0.1/normalize.min.css" rel="stylesheet">
+	<script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.js"></script>
+	<script src="https://cdn.staticfile.org/vue/2.6.10/vue.min.js"></script>
+	<script src="https://cdn.staticfile.org/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js"></script>
+	<script src="https://cdn.staticfile.org/masonry/4.2.2/masonry.pkgd.min.js"></script>
+	<script src="https://cdn.staticfile.org/animejs/2.2.0/anime.min.js"></script>
+	<script src="https://cdn.staticfile.org/urljs/2.3.1/url.min.js"></script>
 	<!-- 自定义 -->
 	<link rel="stylesheet" type="text/css" href="css/demo.css" />
+	<script src="js/main.js"></script>
 </head>
 
 <body class="loading">
@@ -25,23 +26,6 @@
 				<button @click="search()">查询</button>
 			</div>
 		</header>
-		<div class="content content--side">
-			<div class="control control--grids">
-				<span class="control__title">switch layout</span>
-				<div class="control__item">
-					<input class="control__radio" type="radio" name="grid-type" value="grid--type-a" id="control-grid-a" checked>
-					<label class="control__label" for="control-grid-a">grid A</label>
-				</div>
-				<div class="control__item" style="display:none;">
-					<input class="control__radio" type="radio" name="grid-type" value="grid--type-b" id="control-grid-b">
-					<label class="control__label" for="control-grid-b">grid B</label>
-				</div>
-				<div class="control__item" style="display:none;">
-					<input class="control__radio" type="radio" name="grid-type" value="grid--type-c" id="control-grid-c">
-					<label class="control__label" for="control-grid-c">grid C</label>
-				</div>
-			</div>
-		</div>
 		<div class="content content--side content--right">
 			<div class="control control--effects">
 				<span class="control__title">run effect</span>
@@ -63,7 +47,7 @@
 			</div>
 		</div>
 		<div class="content content--center">
-			<div class="grid grid--type-a">
+			<div id="list" class="grid grid--type-a">
 				<div class="grid__sizer"></div>
 				<div v-for="item,key in pins" :key="key" class="grid__item">
 					<a :href="item" class="grid__link" target="_blank">
@@ -78,26 +62,31 @@
 	</div>
 
 	<script type="text/javascript">
+		var proxyBaseApi = "http://127.0.0.1:8081";
 		// 代理ajax
 		function proxyAjax(option,callback) { 
 			$.ajax({
-				url:"http://127.0.0.1:8000/api/xhr",
+				url:`${proxyBaseApi}/api/post`,
+				async:false,
 				type:'POST',
 				data:JSON.stringify(option),
-				dataType:"json",
 				success:function(result,textStatus,jqXHR){
-					if(result.status){
-						typeof callback=="function" ? callback(result.data) : null;
+					if(textStatus==="success"){
+						typeof callback=="function" ? callback(result) : null;
 					}else{
-						console.error("接口访问失败",result.msg);
+						console.error("接口访问失败",result,textStatus,jqXHR);
 					}
+				},
+				error:function(result,textStatus,jqXHR){
+					console.log("Ajax代理服务器访问失败",result,textStatus,jqXHR);
 				}
 			});
 		}
+
 		var v$app = new Vue({
 			el: "#app",
 			data: {
-				query: "帅", page: 1, size: 20,
+				query: "壁纸", page: 1, size: 20,
 				pins: []
 			},
 			mounted: function () {
@@ -127,17 +116,12 @@
 					});
 				},
 				renderPins(re) {
-					$(re).find("body").prevObject.map(function (i, e) {
-						return e.nodeName == "SCRIPT" && !e.src && e.innerText.indexOf('app.page["pins"]') >= 0 ? e : null;
-					}).each(function (i, e) {
-						var pinsList = $(e).text().match(/"key"\s*:\s*"[^"]*"/gm).join(",").replace(/("key":|")/gm, "").split(",");
-						pinsList.map(function (e, i) {
-							_this.pins.push("http://img.hb.aicdn.com/" + e);
-						});
-						// 展示动画特效插件
-						_this.$nextTick(function () {
-							$(document.body).append($("<script>").attr("src","js/main.js"))
-						});
+					// 解析接口数据
+					$(re).find("body").prevObject.filter(function(i,e){
+						return e.nodeName=="SCRIPT"&&!e.src&&e.innerText.indexOf('app.page["pins"]')>=0?e:null;
+					}).each(function(i,e){
+						var $script = $("<script>"+e.innerText.replace("app.route();","window.parseSuccess(app);")+"<\/script>");
+						$("body").append($script);
 					});
 				},
 				getPins() {
@@ -151,6 +135,22 @@
 				}
 			}
 		});
+		// 花瓣数据解析完成事件
+		window.parseSuccess = parseSuccess = function(app){
+			var $view = $("#view").html(""), pins = app&&app.page ? app.page.pins : [];
+			var pins = pins.map(function(e,i){
+				var src = ["http://img.hb.aicdn.com/", e.file.key].join("");
+				// var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURI(src+"_fw236")}`).attr("data-src", src).addClass("pin");
+				// $img.on("error",function(){$(this).remove()});// 错误图片自我移除
+				// $view.append($img);
+				return `${proxyBaseApi}/api/get?url=${encodeURI(src)}`;
+			});
+			v$app.pins = v$app.pins.concat(pins);
+			// 展示动画特效插件
+			v$app.$nextTick(function () {
+				window.init(document.body);
+			});
+		}
 	</script>
 </body>
 

@@ -486,80 +486,47 @@
 
 	window.GridLoaderFx = GridLoaderFx;
 
-	var body = document.body,
-		grids = [].slice.call(document.querySelectorAll('.grid')), masonry = [],
-		currentGrid = 0,
-		// Switch grid radio buttons.
-		switchGridCtrls = [].slice.call(document.querySelectorAll('.control__radio')),
-		// Choose effect buttons.
-		fxCtrls = [].slice.call(document.querySelectorAll('.control--effects > .control__btn')),
-		// The GridLoaderFx instances.
-		loaders = [],
-		loadingTimeout;
-
-	function init() {
+	window.init = function (body) {
+		var op = {
+			currentGrid: 0,
+			loadingTimeout: null,
+			grids: [].slice.call(document.querySelectorAll('.grid')),
+			masonry: [],// The Masonry instances.
+			loaders: [],// The GridLoaderFx instances.
+			fxCtrls: [].slice.call(document.querySelectorAll('.control--effects > .control__btn')),// Choose effect buttons.
+		};
+		
 		// Preload images
-		imagesLoaded(body, function() {
+		$(body).imagesLoaded(function() {
 			// Initialize Masonry on each grid.
-			grids.forEach(function(grid) {
+			op.grids.forEach(function(grid) {
 				var m = new Masonry(grid, {
 					itemSelector: '.grid__item',
 					columnWidth: '.grid__sizer',
 					percentPosition: true,
 					transitionDuration: 0
 				});
-				masonry.push(m);
-				// Hide the grid.
-				grid.classList.add('grid--hidden');
-				// Init GridLoaderFx.
-				loaders.push(new GridLoaderFx(grid));
+				op.masonry.push(m);
+				grid.classList.add('grid--hidden');// Hide the grid.
+				op.loaders.push(new GridLoaderFx(grid));// Init GridLoaderFx.
 			});
-
-			// Show current grid.
-			grids[currentGrid].classList.remove('grid--hidden');
+			op.grids[op.currentGrid].classList.remove('grid--hidden');// Show current grid.
+			body.classList.remove('loading');// Remove loading class from body
 			// Init/Bind events.
-			initEvents();
-			// Remove loading class from body
-			body.classList.remove('loading');
+			op.fxCtrls.forEach(function(ctrl) {
+				ctrl.addEventListener('click', applyFx.bind(op));
+			});
 		});
 	}
-
-	function initEvents() {
-		// Switching grids radio buttons.
-		switchGridCtrls.forEach(function(ctrl) {
-			ctrl.addEventListener('click', switchGrid);
-		});
-		// Effect selection.
-		fxCtrls.forEach(function(ctrl) {
-			ctrl.addEventListener('click', applyFx);
-		});
-	}
-
-	function switchGrid(ev) {
-		// Hide current grid.
-		grids[currentGrid].classList.add('grid--hidden');
-		// New grid.
-		var grid = grids.filter(function(obj) { return obj.classList.contains(ev.target.value); })[0];
-		// Update currentGrid.
-		currentGrid = grids.indexOf(grid);
-		// Show new grid.
-		grid.classList.remove('grid--hidden');
-		masonry[currentGrid].layout();
-	}
-
+	
 	function applyFx(ev) {
+		var op = this;
 		// Simulate loading grid to show the effect.
-		clearTimeout(loadingTimeout);
-		grids[currentGrid].classList.add('grid--loading');
-
-		loadingTimeout = setTimeout(function() {
-			grids[currentGrid].classList.remove('grid--loading');
-
-			// Apply effect.
-			loaders[currentGrid]._render(ev.target.getAttribute('data-fx'));
-		}, 500);
+		clearTimeout(op.loadingTimeout);
+		op.grids[op.currentGrid].classList.add('grid--loading');
+		op.loadingTimeout = setTimeout(function() {
+			op.grids[op.currentGrid].classList.remove('grid--loading');
+			op.loaders[op.currentGrid]._render(ev.target.getAttribute('data-fx'));// Apply effect.
+		}.bind(op), 0);
 	}
-
-	init();
-
 })(window);
