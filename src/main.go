@@ -6,22 +6,24 @@ import (
 
 	"./server/xhr"
 	"./utils"
-	"github.com/julienschmidt/httprouter"
+	"github.com/gorilla/mux"
 )
 
-//声明全局变量
-var R = httprouter.New()
+var port = utils.GetConfValue("global", "port")
+
+// R mux路由容器
+var R = mux.NewRouter()
 
 //初始化
 func init() {
-	R.POST("/api/post", xhr.Post)
-	R.GET("/api/get", xhr.Get)
+	R.HandleFunc("/api/post", xhr.Post)
+	R.HandleFunc("/api/get", xhr.Get)
+	R.HandleFunc("/{scheme:(?:http|https)}/{host}/{path:.*}", xhr.Proxy)
 }
 
 //程序主入口
 func main() {
 	//启动服务
-	port := utils.GetConfValue("global", "port")
 	if err := http.ListenAndServe(":"+port, R); err != nil {
 		log.Printf("服务启动失败:\n%s", err.Error())
 	}

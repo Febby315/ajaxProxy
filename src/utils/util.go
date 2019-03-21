@@ -21,7 +21,8 @@ func GetConfValue(secName string, keyName string) string {
 
 //允许跨域及访问日志
 func EnableXDA(w http.ResponseWriter, r *http.Request) http.ResponseWriter {
-	log.Printf("--> %s %s", r.Method, r.URL.String())
+	r.ParseForm()
+	log.Printf("--> %s %s", r.URL.String(), r.Method)
 	w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域r.Header.Get("Origin")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
 	w.Header().Set("Access-Control-Allow-Credentials", "true")     //允许访问所有域
