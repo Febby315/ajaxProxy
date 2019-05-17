@@ -31,6 +31,14 @@ body|字符串|||请求体
 
     url和mathod为必填项
 
+#### 使用示例
+
+```javascript
+// http://127.0.0.1:8081/api/get?url=encodeURIComponent(url)
+var url = "http://img.hb.aicdn.com/d84030573bcad38920ba4b2248cd98cde343c52722674-0PEN0M";
+`http://127.0.0.1:8081/api/get?url=${encodeURIComponent(url)}`
+```
+
 ```javascript
 // http://127.0.0.1:8081/api/post
 {
@@ -50,8 +58,9 @@ body|字符串|||请求体
 #### 使用示例
 
 ```javascript
-// http://127.0.0.1:8081/api/get?url=encodeURI(url)
-"http://127.0.0.1:8081/api/get?url=http://img.hb.aicdn.com/d84030573bcad38920ba4b2248cd98cde343c52722674-0PEN0M"
+// http://127.0.0.1:8081/api/get?url=encodeURIComponent(url)
+var url = "http://img.hb.aicdn.com/d84030573bcad38920ba4b2248cd98cde343c52722674-0PEN0M";
+`http://127.0.0.1:8081/api/get?url=${encodeURIComponent(url)}`
 ```
 
     同样可传/api/post接口的所有参数,但是代理请求URL将以querystring参数中url参数为准
@@ -59,4 +68,4 @@ body|字符串|||请求体
 ## 使用说明
 
 1. 双击proxy_xhr.exe
-2. 用浏览器打开exampleles目录中实例文件"# ajaxProxy" 
+2. 用浏览器打开exampleles目录中实例文件"# ajaxProxy"

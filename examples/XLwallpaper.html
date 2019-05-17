@@ -26,22 +26,24 @@
 	</div>
 </body>
 <script type="text/javascript">
-	var proxyBaseApi = "http://127.0.0.1:8081"
+	var proxyBaseApi = "http://192.168.2.94:8081"
 	// 代理ajax
-	function proxyAjax(option,callback) { 
+	function proxyAjax(url,option,callback) {
+		console.log(url);
 		$.ajax({
-			url:`${proxyBaseApi}/api/post`,
+			url:`${proxyBaseApi}/api/post?url=${encodeURIComponent(url)}`,
 			type:'POST',
-			data:JSON.stringify(option),
+			contentType: "application/json; charset=utf-8;",
+			data: JSON.stringify(option),
 			success:function(result,textStatus,jqXHR){
 				if(textStatus==="success"){
 					typeof callback=="function" ? callback(result) : null;
 				}else{
-					console.error("接口访问失败",result);
+					console.error("接口访问失败", result, textStatus, jqXHR);
 				}
 			},
-			error:function(res,textStatus){
-				console.error("Ajax代理服务器访问失败");
+			error:function(result,textStatus,jqXHR){
+				console.error("Ajax代理服务器访问失败", result, textStatus, jqXHR);
 			}
 		});
 	}
@@ -64,11 +66,9 @@
 		// 分页获取分类图片
 		function getClassifyImage(classify_id,page,size){
 			var offset = (page-1)*size;
-			var option = {
-				url: "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_image&offset="+offset+"&classify_id="+classify_id+"&sub_classify_id=0&number="+size+"&refer=client_1.0.3.72",
-				type: "get"
-			};
-			proxyAjax(option,function (re) {
+			var url = "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_image&offset="+offset+"&classify_id="+classify_id+"&sub_classify_id=0&number="+size+"&refer=client_1.0.3.72";
+			var option = { type: "get" };
+			proxyAjax(url, option, function (re) {
 				var result = JSON.parse(re), $view = $("#view").html(null);
 				var list = result.data||[];
 				list.forEach(function(item,i){
@@ -77,11 +77,9 @@
 			});
 		}
 		// 获取分类
-		var classifyOption = {
-			url: "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_list&offset=0&number=100&refer=client_1.0.3.72",
-			method: "POST"
-		};
-		proxyAjax(classifyOption,function (re) {
+		var url = "http://dynamic.wallpaper.vip.xunlei.com/wallpaper_api/?req=get_classify_list&offset=0&number=100&refer=client_1.0.3.72";
+		var classifyOption = { method: "POST" };
+		proxyAjax(url, classifyOption, function (re) {
 			var result = JSON.parse(re), $classify = $("#classify").html(null);
 			var list = result.data||[];
 			list.forEach(function(item,i){

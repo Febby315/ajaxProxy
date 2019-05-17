@@ -62,23 +62,23 @@
 	</div>
 
 	<script type="text/javascript">
-		var proxyBaseApi = "http://127.0.0.1:8081";
+		var proxyBaseApi = "http://192.168.2.94:8081";
 		// 代理ajax
-		function proxyAjax(option,callback) { 
+		function proxyAjax(url,option,callback) { 
 			$.ajax({
-				url:`${proxyBaseApi}/api/post`,
-				async:false,
+				url:`${proxyBaseApi}/api/post?url=${encodeURIComponent(url)}`,
 				type:'POST',
-				data:JSON.stringify(option),
+				contentType: "application/json; charset=utf-8;",
+				data: JSON.stringify(option),
 				success:function(result,textStatus,jqXHR){
 					if(textStatus==="success"){
 						typeof callback=="function" ? callback(result) : null;
 					}else{
-						console.error("接口访问失败",result,textStatus,jqXHR);
+						console.error("接口访问失败", result, textStatus, jqXHR);
 					}
 				},
 				error:function(result,textStatus,jqXHR){
-					console.log("Ajax代理服务器访问失败",result,textStatus,jqXHR);
+					console.error("Ajax代理服务器访问失败", result, textStatus, jqXHR);
 				}
 			});
 		}
@@ -86,7 +86,7 @@
 		var v$app = new Vue({
 			el: "#app",
 			data: {
-				query: "壁纸", page: 1, size: 20,
+				query: "壁纸", page: 1, size: 30,
 				pins: []
 			},
 			mounted: function () {
@@ -126,12 +126,10 @@
 				},
 				getPins() {
 					_this = this;
-					var querystring = Url.stringify({ q: encodeURI(_this.query), page: _this.page, per_page: _this.size });//, category: "beauty"
-					var option = {
-						url: /^http/g.test(_this.query) ? _this.query : ["http://huaban.com/search/", querystring].join("?"),
-						method: "GET"
-					};
-					proxyAjax(option, _this.renderPins);
+					var querystring = Url.stringify({ q: encodeURIComponent(_this.query), page: _this.page, per_page: _this.size });//, category: "beauty"
+					var url = /^http/g.test(_this.query) ? _this.query : ["http://huaban.com/search/", querystring].join("?");
+					var option = { method: "GET" };
+					proxyAjax(url, option, _this.renderPins);
 				}
 			}
 		});
@@ -140,10 +138,10 @@
 			var $view = $("#view").html(""), pins = app&&app.page ? app.page.pins : [];
 			var pins = pins.map(function(e,i){
 				var src = ["http://img.hb.aicdn.com/", e.file.key].join("");
-				// var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURI(src+"_fw236")}`).attr("data-src", src).addClass("pin");
+				// var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURIComponent(src+"_fw236")}`).attr("data-src", src).addClass("pin");
 				// $img.on("error",function(){$(this).remove()});// 错误图片自我移除
 				// $view.append($img);
-				return `${proxyBaseApi}/api/get?url=${encodeURI(src)}`;
+				return `${proxyBaseApi}/api/get?url=${encodeURIComponent(src)}`;
 			});
 			v$app.pins = v$app.pins.concat(pins);
 			// 展示动画特效插件

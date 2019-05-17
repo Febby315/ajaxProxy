@@ -5,5 +5,6 @@ type Xhr struct {
 	URL    string            `json:"url"`    //请求链接
 	Method string            `json:"method"` //请求方式
 	Header map[string]string `json:"header"` //自定义header
+	Form   map[string]string `json:"form"`   //FormData
 	Body   string            `json:"body"`   //请求数据
 }

@@ -12,18 +12,23 @@ import (
 	"../../utils"
 )
 
-// Post 代理请求接口
-func Post(w http.ResponseWriter, r *http.Request) {
-	utils.EnableXDA(w, r)                //跨域请求及日志
-	xhr := Xhr{}                         //创建一个XHR对象
-	json.NewDecoder(r.Body).Decode(&xhr) //赋值
-	//
+// Get 代理请求静态资源
+func Get(w http.ResponseWriter, r *http.Request) {
+	utils.EnableXDA(w, r)                // 跨域请求及日志
+	xhr := Xhr{}                         // 创建一个XHR对象
+	json.NewDecoder(r.Body).Decode(&xhr) // 赋值
+	xhr.URL = r.Form.Get("url")          // 获取参数URL链接
+
 	client := &http.Client{} // 创建请求客户端
 	req, _ := http.NewRequest(xhr.Method, xhr.URL, strings.NewReader(xhr.Body))
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36") // 伪装浏览器
+	req.Header.Set("User-Agent", utils.GetConfValue("global", "User-Agent")) // 伪装浏览器
+	req.ParseForm()
 	// 设置用户自定义请求头
 	for k, v := range xhr.Header {
 		req.Header.Set(k, v)
+	}
+	for k, v := range xhr.Form {
+		req.Form.Add(k, v)
 	}
 	if res, err := client.Do(req); err == nil {
 		log.Printf("<-- %v %v %v\n", xhr.URL, xhr.Method, res.StatusCode)
@@ -40,19 +45,23 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Get 代理请求静态资源
-func Get(w http.ResponseWriter, r *http.Request) {
+// Post 代理请求接口
+func Post(w http.ResponseWriter, r *http.Request) {
 	utils.EnableXDA(w, r)                // 跨域请求及日志
 	xhr := Xhr{}                         // 创建一个XHR对象
 	json.NewDecoder(r.Body).Decode(&xhr) // 赋值
-	xhr.URL = r.Form.Get("url")
-	//
+	xhr.URL = r.Form.Get("url")          // 获取参数URL链接
+
 	client := &http.Client{} // 创建请求客户端
 	req, _ := http.NewRequest(xhr.Method, xhr.URL, strings.NewReader(xhr.Body))
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36") // 伪装浏览器
+	req.Header.Set("User-Agent", utils.GetConfValue("global", "User-Agent")) // 伪装浏览器
+	req.ParseForm()
 	// 设置用户自定义请求头
 	for k, v := range xhr.Header {
 		req.Header.Set(k, v)
+	}
+	for k, v := range xhr.Form {
+		req.Form.Add(k, v)
 	}
 	if res, err := client.Do(req); err == nil {
 		log.Printf("<-- %v %v %v\n", xhr.URL, xhr.Method, res.StatusCode)
@@ -62,6 +71,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set(k, v[0])
 		}
 		body, _ := ioutil.ReadAll(res.Body)
+
 		w.Write(body) // 请求数据并返回给客户端
 	} else {
 		w.WriteHeader(500)
@@ -79,10 +89,14 @@ func Proxy(w http.ResponseWriter, r *http.Request) {
 	//
 	client := &http.Client{} // 创建请求客户端
 	req, _ := http.NewRequest(xhr.Method, xhr.URL, strings.NewReader(xhr.Body))
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36") // 伪装浏览器
+	req.Header.Set("User-Agent", utils.GetConfValue("global", "User-Agent")) // 伪装浏览器
+	req.ParseForm()
 	// 设置用户自定义请求头
 	for k, v := range xhr.Header {
 		req.Header.Set(k, v)
+	}
+	for k, v := range xhr.Form {
+		req.Form.Add(k, v)
 	}
 	if res, err := client.Do(req); err == nil {
 		log.Printf("<-- %v %v %v\n", xhr.URL, xhr.Method, res.StatusCode)

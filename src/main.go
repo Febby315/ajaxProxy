@@ -24,7 +24,5 @@ func init() {
 //程序主入口
 func main() {
 	//启动服务
-	if err := http.ListenAndServe(":"+port, R); err != nil {
-		log.Printf("服务启动失败:\n%s", err.Error())
-	}
+	log.Fatalln(http.ListenAndServe("0.0.0.0:"+port, R))
 }
