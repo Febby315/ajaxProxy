@@ -141,7 +141,8 @@ main {
 
 /* Header */
 .codrops-header {
-	position: relative;
+	position: fixed;
+	bottom: 0px;
 	z-index: 100;
 	display: flex;
 	align-items: center;

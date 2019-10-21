@@ -24,6 +24,7 @@
 			<div class="codrops-header__title">
 				<input v-model="query" type="text" placeholder="搜索你喜欢的" value="">
 				<button @click="search()">查询</button>
+				<button @click="next()">下一页</button>
 			</div>
 		</header>
 		<div class="content content--side content--right">
@@ -62,14 +63,16 @@
 	</div>
 
 	<script type="text/javascript">
-		var proxyBaseApi = "http://192.168.2.94:8081";
 		// 代理ajax
-		function proxyAjax(url,option,callback) { 
+		function proxyAjax(url,data,callback) {
 			$.ajax({
-				url:`${proxyBaseApi}/api/post?url=${encodeURIComponent(url)}`,
-				type:'POST',
+				url:'http://192.168.2.94:8081/api/post',
+				type:'GET',
 				contentType: "application/json; charset=utf-8;",
-				data: JSON.stringify(option),
+				data: data,
+				beforeSend: function (XMLHttpRequest) {
+					XMLHttpRequest.setRequestHeader("Proxy", url);
+				},
 				success:function(result,textStatus,jqXHR){
 					if(textStatus==="success"){
 						typeof callback=="function" ? callback(result) : null;
@@ -78,7 +81,7 @@
 					}
 				},
 				error:function(result,textStatus,jqXHR){
-					console.error("Ajax代理服务器访问失败", result, textStatus, jqXHR);
+					console.error("代理服务器访问失败", result, textStatus, jqXHR);
 				}
 			});
 		}
@@ -95,18 +98,6 @@
 				_this.$nextTick(function () {
 					_this.getPins();
 				});
-				//还可以基window窗口（body）来添加滚动事件, (因为布局不同,所以在这里没效果，因为[上面是基于body中的某个元素来添加滚动事的])
-				$(window).scroll(function () {
-					//当时滚动条离底部60px时开始加载下一页的内容
-					if (($(window).height() + $(window).scrollTop() + 60) >= $(document).height()) {
-						window.timers ? clearTimeout(window.timers) : null;
-						timers = setTimeout(function () {
-							_this.page = _this.page + 1;
-							_this.getPins();
-							console.log("第" + _this.page + "页");
-						}, 300);
-					}
-				});
 			},
 			methods: {
 				search() {
@@ -115,21 +106,29 @@
 						_this.getPins();
 					});
 				},
+				next(){
+					_this.page = _this.page + 1;
+					_this.getPins();
+				},
 				renderPins(re) {
 					// 解析接口数据
 					$(re).find("body").prevObject.filter(function(i,e){
 						return e.nodeName=="SCRIPT"&&!e.src&&e.innerText.indexOf('app.page["pins"]')>=0?e:null;
 					}).each(function(i,e){
-						var $script = $("<script>"+e.innerText.replace("app.route();","window.parseSuccess(app);")+"<\/script>");
-						$("body").append($script);
+						new Function(e.innerText.replace("app.route();","window.parseSuccess(app);"))();
 					});
 				},
 				getPins() {
 					_this = this;
-					var querystring = Url.stringify({ q: encodeURIComponent(_this.query), page: _this.page, per_page: _this.size });//, category: "beauty"
+					var querystring = Url.stringify({
+						q: _this.query,
+						page: _this.page,
+						per_page: _this.size,
+						// category: "beauty"
+					});
 					var url = /^http/g.test(_this.query) ? _this.query : ["http://huaban.com/search/", querystring].join("?");
-					var option = { method: "GET" };
-					proxyAjax(url, option, _this.renderPins);
+					console.log(url)
+					proxyAjax(url, null, _this.renderPins);
 				}
 			}
 		});
@@ -138,14 +137,11 @@
 			var $view = $("#view").html(""), pins = app&&app.page ? app.page.pins : [];
 			var pins = pins.map(function(e,i){
 				var src = ["http://img.hb.aicdn.com/", e.file.key].join("");
-				// var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURIComponent(src+"_fw236")}`).attr("data-src", src).addClass("pin");
-				// $img.on("error",function(){$(this).remove()});// 错误图片自我移除
-				// $view.append($img);
-				return `${proxyBaseApi}/api/get?url=${encodeURIComponent(src)}`;
+				return `http://192.168.2.94:8081/api/get?proxy=${encodeURIComponent(src)}`;
 			});
-			v$app.pins = v$app.pins.concat(pins);
+			v$app.pins = pins; //v$app.pins.concat(pins);
 			// 展示动画特效插件
-			v$app.$nextTick(function () {
+			v$app.$nextTick(function (e) {
 				window.init(document.body);
 			});
 		}

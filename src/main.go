@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"./server/xhr"
+	"./server/proxy"
 	"./utils"
 	"github.com/gorilla/mux"
 )
@@ -16,9 +16,8 @@ var R = mux.NewRouter()
 
 //初始化
 func init() {
-	R.HandleFunc("/api/post", xhr.Post)
-	R.HandleFunc("/api/get", xhr.Get)
-	R.HandleFunc("/{scheme:(?:http|https)}/{host}/{path:.*}", xhr.Proxy)
+	R.HandleFunc("/api/get", proxy.Get)
+	R.HandleFunc("/api/post", proxy.Post)
 }
 
 //程序主入口

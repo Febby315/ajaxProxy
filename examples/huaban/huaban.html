@@ -38,19 +38,22 @@
 		var $view = $("#view").html(""), pins = app&&app.page ? app.page.pins : [];
 		pins.map(function(e,i){
 			var src = ["http://img.hb.aicdn.com/", e.file.key].join("");
-			var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?url=${encodeURIComponent(src+"_fw236")}`).attr("data-src", src).addClass("pin");
+			var $img = $("<img></img>").attr("src",`${proxyBaseApi}/api/get?proxy=${encodeURIComponent(src+"_fw236")}`).attr("data-src", src).addClass("pin");
 			$img.on("error",function(){$(this).remove()});// 错误图片自我移除
 			$view.append($img);
 			return src;
 		});
 	}
 	// 代理ajax
-	function proxyAjax(url,option,callback) { 
+	function proxyAjax(url,data,callback) {
 		$.ajax({
-			url:`${proxyBaseApi}/api/post?url=${encodeURIComponent(url)}`,
-			type:'POST',
+			url:'http://192.168.2.94:8081/api/post',
+			type:'GET',
 			contentType: "application/json; charset=utf-8;",
-			data: JSON.stringify(option),
+			data: data,
+			beforeSend: function (XMLHttpRequest) {
+				XMLHttpRequest.setRequestHeader("Proxy", url);
+			},
 			success:function(result,textStatus,jqXHR){
 				if(textStatus==="success"){
 					typeof callback=="function" ? callback(result) : null;
@@ -59,10 +62,11 @@
 				}
 			},
 			error:function(result,textStatus,jqXHR){
-				console.error("Ajax代理服务器访问失败", result, textStatus, jqXHR);
+				console.error("代理服务器访问失败", result, textStatus, jqXHR);
 			}
 		});
 	}
+
 
 	// 程序入口
 	$(document).ready(function(){
